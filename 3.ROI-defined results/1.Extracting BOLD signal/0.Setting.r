@@ -28,6 +28,7 @@ List.list[[7]] = db = c("RMySQL", "DBI", "odbc", "RSQL", "RSQLite")
 List.list[[8]] = sampling = c("rsample")
 List.list[[9]] = excel = c("openxlsx")
 List.list[[10]] = others = c("beepr")
+List.list[[11]] = fmri = c("oro.nifti", "fslr")
 
 packages_to_install_and_load = unlist(List.list)
 install_packages(packages_to_install_and_load)
@@ -151,8 +152,10 @@ extract_bold_using_atlas = function(volume,
   
   if(!is.null(path_save) && !is.null(file_name)){
     dir.create(path_save, showWarnings = F, recursive = T)
-    file_name = paste0(file_name, ".csv")
-    write.csv(bold_signals_df, file.path(path_save, file_name))  
+    # file_name = paste0(file_name, ".csv")
+    # write.csv(bold_signals_df, file.path(path_save, file_name))  
+    file_name = paste0(file_name, ".txt")
+    write.table(bold_signals_df, file.path(path_save, file_name))
   }
   
   return(bold_signals_df) 

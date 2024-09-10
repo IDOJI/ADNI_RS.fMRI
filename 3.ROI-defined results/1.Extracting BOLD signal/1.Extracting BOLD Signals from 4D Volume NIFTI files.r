@@ -29,22 +29,21 @@ bold = extract_bold_using_atlas_multi(path_4d_volumes, path_save_bold, coordinat
 
 
 ## 🟧 pipeline 1 ===================================================================================
-# path_pipeline = "/Volumes/ADNI_SB_SSD_NTFS_4TB_Sandisk/New/Extracted Results/2.4D Volume/FunImgARCWSF"
-# path_save = "/Volumes/ADNI_SB_SSD_NTFS_4TB_Sandisk/New/Extracted Results/3.ROI Signals"
-# bold_signals_list_1 = extract_bold_for_each_subject(path_pipeline, 
-#                                                     coordinates, 
-#                                                     path_save)
-
+# A Folder containing 4D volume files
+path_4d_volumes = "/Volumes/ADNI_SB_SSD_NTFS_4TB_Sandisk/New/Extracted Results/2.4D Volume/FunImgARCWSF"
+# A Folder to save the results
+path_save_bold = "/Users/Ido/Documents/GitHub/ADNI_RS.fMRI_Data/3.ROI-defined results/1.Extracting BOLD signal/FunImgARSFW"
+bold = extract_bold_using_atlas_multi(path_4d_volumes, path_save_bold, coordinates)
 
 
 
 
 ## 🟧 pipeline 2 ===================================================================================
-# path_pipeline = "/Volumes/ADNI_SB_SSD_NTFS_4TB_Sandisk/New/Extracted Results/2.4D Volume/FunImgARglobalCWSF"
-# path_save = "/Volumes/ADNI_SB_SSD_NTFS_4TB_Sandisk/New/Extracted Results/3.ROI Signals"
-# bold_signals_list_2 = extract_bold_for_each_atlas_coordinate(path_pipeline, 
-#                                                              coordinates, 
-#                                                              path_save)
+# A Folder containing 4D volume files
+path_4d_volumes = "/Volumes/ADNI_SB_SSD_NTFS_4TB_Sandisk/New/Extracted Results/2.4D Volume/FunImgARglobalCWSF"
+# A Folder to save the results
+path_save_bold = "/Users/Ido/Documents/GitHub/ADNI_RS.fMRI_Data/3.ROI-defined results/1.Extracting BOLD signal/FunImgARglobalCWSF"
+bold = extract_bold_using_atlas_multi(path_4d_volumes, path_save_bold, coordinates)
 
 
 
