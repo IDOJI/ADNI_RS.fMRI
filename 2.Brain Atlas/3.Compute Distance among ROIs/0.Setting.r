@@ -51,17 +51,14 @@ fit_length <- function(number, digits) {
 
 ## 🟧 Extract coordinates ===========================================================================
 extract_xyz_coordinate = function(ith_atlas){
-  # ith_atlas = atlas[[1]]
   # Get unique ROI numbers in the atlas, excluding background (0)
   roi_numbers <- unique(ith_atlas[ith_atlas > 0]) %>% sort
   
   # Store the data frame in the list
   tictoc::tic()
   roi_coordinates_list = lapply(roi_numbers, function(roi){
-    # roi = 1000
     # Find voxel positions for the current ROI
     voxel_coords <- which(ith_atlas == roi, arr.ind = TRUE)
-    
     
     # Convert to a data frame
     roi_df <- as.data.frame(voxel_coords)
