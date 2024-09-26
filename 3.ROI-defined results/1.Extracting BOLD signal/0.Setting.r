@@ -302,14 +302,20 @@ process_atlas_files <- function(base_dir, atlas_folder) {
   cat("\n", "Saved:", crayon::green(atlas_folder), "as RDS file.", "\n")
 }
 
+
+
 # 모든 atlas 폴더에 대해 처리하는 함수
 process_all_atlases <- function(base_dir) {
+  
   # atlas 폴더 리스트
   atlas_folders <- list.files(base_dir)
   
   # 각 atlas 폴더에 대해 feather 파일 결합 후 rds로 저장
-  lapply(atlas_folders, function(atlas_folder) {
+  restult = lapply(atlas_folders, function(atlas_folder) {
+    
     process_atlas_files(base_dir, atlas_folder)
+    
   })
+  
 }
 

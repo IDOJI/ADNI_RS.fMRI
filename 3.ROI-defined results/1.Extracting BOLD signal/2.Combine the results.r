@@ -11,7 +11,8 @@ View(aal)
 
 
 ## 🟨FunImgARglobalSFW =========================================================================================================
-process_all_atlases("/Users/Ido/Documents/✴️Data/ADNI/RS.fMRI/3.ROI-defined results/1.Extracting BOLD signal/FunImgARglobalCWSF")
+base_dir = "/Users/Ido/Documents/✴️Data/ADNI/RS.fMRI/3.ROI-defined results/1.Extracting BOLD signal/FunImgARglobalCWSF"
+process_all_atlases(base_dir)
 
 
 

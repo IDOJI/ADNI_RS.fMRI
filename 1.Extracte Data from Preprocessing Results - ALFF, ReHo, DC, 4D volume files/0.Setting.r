@@ -1,5 +1,4 @@
 # 🟥 Load Functions & Packages ##########################################################################
-
 Sys.setlocale("LC_ALL", "en_US.UTF-8")
 
 ## 🟨Install and loading Packages ================================
@@ -191,6 +190,44 @@ copy_4D_volume_files_with_rid <- function(path_from, path_to, folder_names) {
 
 
 
+
+# 🟥 combine data =========================================================================
+# 필요한 패키지 로드
+library(oro.nifti)
+
+# nii 파일들을 읽고 리스트로 저장하는 함수 정의
+save_nii_files_as_rds <- function(input_dir, export_path = NULL, file_name = NULL) {
+  
+  # 지정된 경로에서 .nii 파일 목록을 가져오기
+  nii_files <- list.files(input_dir, pattern = "\\.nii(.gz)?$", full.names = TRUE)
+  
+  # 파일들을 읽고 리스트로 저장 (파일명은 확장자를 제거한 이름으로 설정)
+  nii_list <- lapply(nii_files, function(file) {
+    readNIfTI(file)
+  })
+  
+  # 리스트의 이름을 파일명으로 설정 (확장자 제거)
+  names(nii_list) <- tools::file_path_sans_ext(basename(nii_files))
+  
+  # export_path가 NULL인 경우 현재 작업 디렉토리를 기본 경로로 설정
+  if (is.null(export_path)) {
+    export_path <- getwd()
+  }
+  
+  # file_name이 NULL인 경우 기본 파일명 설정
+  if (is.null(file_name)) {
+    file_name <- "nii_files_list"
+  }
+  
+  # 최종 RDS 파일 경로 생성
+  output_rds_path <- file.path(export_path, paste0(file_name, ".rds"))
+  
+  # 리스트를 .rds 파일로 저장
+  saveRDS(nii_list, output_rds_path)
+  
+  # 완료 메시지 출력
+  message("RDS file saved to: ", output_rds_path)
+}
 
 
 
