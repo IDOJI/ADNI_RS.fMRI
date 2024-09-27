@@ -291,3 +291,45 @@ apply_fisher_z_transformation <- function(input_dir, output_dir) {
 
 
 
+# 🟥 rename elements by each RID ================================================================================
+# 필요한 패키지 로드
+library(stringr)
+
+# 원소 이름에서 "RID_XXXX" 부분만 추출하는 함수
+extract_rid <- function(path) {
+  # 경로에서 basename 추출
+  file_name <- basename(path)
+  
+  # "RID_XXXX" 패턴 추출
+  rid <- str_extract(file_name, "RID_\\d+")
+  
+  return(rid)
+}
+
+# rds 파일을 읽고 원소 이름을 변경한 후 다시 저장하는 함수 정의
+process_rds_files <- function(rds_dir) {
+  
+  # 지정된 경로에서 .rds 파일 목록 가져오기
+  rds_files <- list.files(rds_dir, pattern = "\\.rds$", full.names = TRUE)
+  
+  # 각 rds 파일에 대해 작업 수행
+  for (rds_file in rds_files) {
+    # rds_file = rds_files[1]
+    # rds 파일 읽기
+    atlas <- readRDS(rds_file)
+    
+    # 각 리스트 원소의 이름을 "RID_XXXX" 형태로 변경
+    new_names <- sapply(names(atlas), extract_rid)
+    names(atlas) <- new_names
+    
+    # 변경된 리스트를 다시 같은 파일에 저장
+    saveRDS(atlas, rds_file)
+    
+    # 진행 상황 출력
+    message(paste("Processed and saved:", rds_file))
+  }
+  
+  message("All files processed and updated.")
+}
+
+
