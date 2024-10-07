@@ -64,7 +64,7 @@ sort_distances_for_roi <- function(distance_matrix, roi_name) {
   sorted_distances <- sort(distances)
   
   # ROI 이름과 거리를 리스트로 반환
-  return(list(sorted_distances = sorted_distances))
+  return(sorted_distances)
 }
 
 # 특정 atlas에 대해 각 ROI별로 거리를 정렬한 리스트 생성
@@ -77,6 +77,7 @@ process_atlas <- function(distance_matrix) {
   
   # 각 ROI에 대해 거리 계산 및 정렬
   for (roi_name in roi_names) {
+    # roi_name = roi_names[1]
     sorted_distances <- sort_distances_for_roi(distance_matrix, roi_name)
     roi_distance_list[[roi_name]] <- sorted_distances
   }
@@ -86,14 +87,16 @@ process_atlas <- function(distance_matrix) {
 
 # 모든 atlas에 대해 ROI 간 거리를 정렬하는 함수
 process_all_atlases <- function(all_distance_matrices) {
+  # all_distance_matrices = dist_mat
   # 결과를 저장할 리스트 초기화
   all_atlas_sorted_distances <- list()
   
   # 각 atlas에 대해 반복
   for (atlas_name in names(all_distance_matrices)) {
+    # atlas_name = names(all_distance_matrices)[1]
     message(paste("Processing atlas:", atlas_name))
     # 각 atlas에 대해 거리 정렬
-    sorted_distances <- process_atlas(all_distance_matrices[[atlas_name]])
+    sorted_distances <- process_atlas(distance_matrix = all_distance_matrices[[atlas_name]])
     all_atlas_sorted_distances[[atlas_name]] <- sorted_distances
   }
   

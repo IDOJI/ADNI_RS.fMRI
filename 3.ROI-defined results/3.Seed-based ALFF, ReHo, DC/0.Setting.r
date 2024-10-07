@@ -45,124 +45,121 @@ select = dplyr::select
 
 
 # 🟥 Define Functions #################################################################################################
-# 필요한 패키지 로드
-library(tictoc)
-library(crayon)
+# 좌표에서 값을 추출하는 함수
+extract_values <- function(nifti_img, coords) {
+  sapply(1:nrow(coords), function(i) {
+    x <- coords$dim1[i]
+    y <- coords$dim2[i]
+    z <- coords$dim3[i]
+    nifti_img[x, y, z]
+  })
+}
 
-process_fmri_rds_with_atlas <- function(atlas_list, fmri_rds_path, export_path, file_name) {
+
+
+
+# 🟨 공통 함수 정의 =====================================================================================================
+extract_data_by_roi = function(path_data, path_export, path_atlas_list){
+  atlas_list = readRDS(path_atlas_list)
   
-  # 결과 저장 디렉토리 생성
-  dir.create(export_path, showWarnings = FALSE, recursive = TRUE)
+  # 파일 이름에서 확장자 제외하고 이름만 추출하기
+  file_names <- tools::file_path_sans_ext(list.files(path_data, pattern = "\\.rds$"))
+  path_files = list.files(path_data, pattern = "\\.rds$", full.names = T)
   
-  # rds 파일에서 fMRI 데이터를 리스트로 읽어오기
-  fmri_list <- readRDS(fmri_rds_path)
+  data_list = lapply(path_files, readRDS) %>% 
+    setNames(file_names)
   
-  # atlas별로 결과를 저장할 리스트 초기화
-  atlas_results <- vector("list", length(atlas_list))
-  names(atlas_results) <- names(atlas_list)
   
-  # 각 fMRI 리스트의 원소에 대해 반복 (각 사람에 대해 반복)
-  for (fmri_name in names(fmri_list)) {
+  for(data_type in names(data_list)){
+    # data_type = names(data_list)[1]
+    target_data = data_list[[data_type]]
+    path_export_by_data_type = file.path(path_export, data_type)
+    dir.create(path_export_by_data_type, showWarnings = F, recursive = T)
     
-    # 사람의 ID 추출 (예: "RID_0021")
-    person_id <- sub(".*_(RID_\\d+).*", "\\1", fmri_name)
-    
-    # 각 atlas별 파일 이름 확인 및 존재 여부 체크
-    skip_person <- TRUE
-    for (atlas_name in names(atlas_list)) {
-      person_export_path <- file.path(export_path, paste0(person_id, "_", atlas_name, ".rds"))
-      if (!file.exists(person_export_path) || file.size(person_export_path) == 0) {
-        skip_person <- FALSE
-        break
+    for(atlas_name in names(atlas_list)){
+      # atlas_name = names(atlas_list)[1]
+      atlas = atlas_list[[atlas_name]]
+      
+      # 저장할 파일 경로 설정
+      file_path_save_list <- file.path(path_export_by_data_type, paste0(atlas_name, ".rds"))
+      file_path_mean_save_list <- file.path(path_export_by_data_type, paste0("Mean___", atlas_name, ".rds"))
+      
+      # 파일이 이미 존재하는지 확인
+      if (file.exists(file_path_save_list) & file.exists(file_path_mean_save_list)) {
+        # 이미 파일이 존재하는 경우 건너뛰기 메시지 출력
+        cat(
+          crayon::bgBlue$bold(" Data Type: "), crayon::yellow(data_type), "\n",
+          crayon::bgGreen$bold(" Atlas Name: "), crayon::magenta(atlas_name), "\n",
+          crayon::bgCyan$bold(" Status: "), crayon::red("Skipping, files already exist."), "\n\n"
+        )
+        next  # 다음 atlas로 건너뛰기
       }
-    }
-    
-    # 이미 계산된 경우 건너뛰기
-    if (skip_person) {
-      cat(yellow(paste0("Skipped ", fmri_name, " as results already exist.\n")))
-      next
-    }
-    
-    # 타이머 시작
-    tic()
-    
-    # fMRI 이미지 데이터 가져오기
-    fmri_img <- fmri_list[[fmri_name]]
-    
-    # atlas 리스트를 순회하면서 처리
-    for (atlas_name in names(atlas_list)) {
       
-      atlas <- atlas_list[[atlas_name]]
+      save_list = list()
+      mean_save_list = list()
       
-      # atlas 내의 ROI를 순회하여 처리
-      ROI_avg_list <- lapply(names(atlas), function(roi_name) {
-        # 해당 ROI 좌표 가져오기
-        roi_coords <- atlas[[roi_name]]
+      for(rid in names(target_data)){
+        # rid = names(target_data)[1]
+        target_rid = target_data[[rid]]
         
-        # 좌표값을 사용하여 fMRI 데이터에서 값 추출
-        roi_values <- apply(roi_coords, 1, function(coord) {
-          coord <- unlist(coord)
-          fmri_img[coord[1], coord[2], coord[3]]
-        })
+        save_each_rid = list()
+        mean_save_each_rid = list()
+        start_time <- Sys.time()  # 각 RID 처리 시작 시간 기록
         
-        # NA가 있으면 루프 중단
-        if (any(is.na(roi_values))) {
-          stop("NA values found in ROI values. Stopping the loop.")
-        } else {
-          # ROI의 평균값 계산
-          roi_avg <- mean(roi_values)
-        }
+        for(roi in names(atlas)){
+          # roi = names(atlas)[1]
+          target_roi = atlas[[roi]]
+          roi_values = apply(target_roi, 1, function(x){
+            x = unlist(x)
+            target_rid[x[1], x[2], x[3]]
+          })
+          
+          save_each_rid[[roi]] = cbind(target_roi, values = roi_values)
+          mean_save_each_rid[[roi]] <- data.frame(mean_value = mean(roi_values)) %>%
+            rename(!!as.character(roi) := mean_value)  # mean_value 열을 roi 객체의 값으로 변경
+          
+        } # ROI
         
-        # ROI 이름을 열 이름으로 결과 저장
-        data.frame(ROI = roi_name, AverageValue = roi_avg)
-      })
+        # RID 처리 종료 시간 기록 및 소요 시간 계산
+        rid_end_time <- Sys.time()
+        rid_duration <- rid_end_time - start_time
+        
+        # crayon을 사용하여 각 메시지 부분마다 다른 색상으로 출력
+        cat(
+          crayon::bgBlue$bold(" Data Type: "), crayon::yellow(data_type), "\n",
+          crayon::bgGreen$bold(" Atlas Name: "), crayon::magenta(atlas_name), "\n",
+          crayon::bgCyan$bold(" RID: "), crayon::red(rid), "\n",
+          crayon::bgWhite$bold(crayon::black(" Status: ")), crayon::bgRed$bold("RID Processing Completed"), "\n",
+          crayon::bgBlack$bold(" RID Processing Duration: "), crayon::bgMagenta$bold(crayon::white(rid_duration)), "\n\n"
+        )
+        
+        mean_save_list[[rid]] = do.call(cbind, mean_save_each_rid) %>% cbind(RID = rid, .)
+        save_list[[rid]] = save_each_rid
+        
+      } # RID
       
-      # 각 ROI 결과 합치기 (행렬 형태로 변환)
-      result <- do.call(rbind, ROI_avg_list)
+      mean_save_df = do.call(rbind, mean_save_list)
+      row.names(mean_save_df) = NULL
       
-      # 데이터프레임을 가로 형태로 변환
-      result_wide <- t(result$AverageValue)
-      colnames(result_wide) <- result$ROI
-      result_wide <- as.data.frame(result_wide)
-      result_wide$RID <- person_id
-      result_wide <- result_wide %>% relocate(RID)
       
-      # 각 사람의 데이터 개별적으로 저장
-      person_export_path <- file.path(export_path, paste0(person_id, "_", atlas_name, ".rds"))
-      saveRDS(result_wide, file = person_export_path)
-    }
+      # saveRDS 시간 측정
+      save_start_time <- Sys.time()  # saveRDS 시작 시간 기록
+      saveRDS(save_list, file_path_save_list)  # 파일 경로를 설정한 파일명으로 저장
+      saveRDS(mean_save_df, file_path_mean_save_list)  # 평균 파일 저장
+      save_end_time <- Sys.time()  # saveRDS 종료 시간 기록
+      save_duration <- save_end_time - save_start_time  # saveRDS에 걸린 시간 계산
+      
+      # saveRDS 완료 메시지 출력 (각 부분마다 다른 색상 적용)
+      cat(
+        crayon::bgYellow$bold(" Data Type: "), crayon::blue(data_type), "\n",
+        crayon::bgRed$bold(" Atlas Name: "), crayon::cyan(atlas_name), "\n",
+        crayon::bgMagenta$bold(" Status: "), crayon::green("SaveRDS Completed"), "\n",
+        crayon::bgWhite$bold(crayon::black(" SaveRDS Duration: ")), crayon::white(save_duration), "\n",
+        crayon::bgBlack$bold(" Message: "), crayon::yellow("Saving completed successfully for "), 
+        crayon::blue(data_type), " - ", crayon::cyan(atlas_name), "\n\n"
+      )
+      
+    } # atlas
     
-    # 사람 당 처리 시간 계산
-    elapsed_time <- toc(quiet = TRUE)
-    
-    # 처리 시간을 출력 (사람의 ID는 파란색, 처리 시간은 초록색으로 표시)
-    cat(blue(paste0("Processed ", fmri_name)), " in ", green(paste0(round(elapsed_time$toc - elapsed_time$tic, 2), " seconds.\n")))
-  }
-  
-  # atlas별로 결과를 합치고 파일 삭제
-  for (atlas_name in names(atlas_list)) {
-    # 해당 atlas에 대한 모든 사람의 결과 파일 불러오기 및 합치기
-    person_files <- list.files(export_path, pattern = paste0("_", atlas_name, ".rds$"), full.names = TRUE)
-    
-    # 이미 파일이 존재하고 크기가 0이 아닌 경우 건너뛰기
-    atlas_export_path <- file.path(export_path, paste0(file_name, "_", atlas_name, ".rds"))
-    if (file.exists(atlas_export_path) && file.size(atlas_export_path) > 0) {
-      cat(yellow(paste0("Skipped saving ", atlas_name, " as file already exists and is non-empty.\n")))
-      next
-    }
-    
-    # atlas별 결과 병합
-    atlas_result <- do.call(rbind, lapply(person_files, readRDS))
-    
-    # atlas 결과 저장
-    saveRDS(atlas_result, file = atlas_export_path)
-    
-    # 개별 사람의 결과 파일 삭제
-    file.remove(person_files)
-    
-    # 저장 경로 출력
-    cat(green(paste0("All results for ", atlas_name, " saved to: ", atlas_export_path, "\n")))
-  }
-  
-  message("All files processed and saved.")
+  } # data_type
 }
